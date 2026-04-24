@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Highway Racing</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial;
+    background: #111;
+}
+
+/* carretera */
+#road {
+    position: absolute;
+    width: 40%;
+    height: 100%;
+    left: 30%;
+    background: #2c2c2c;
+    border-left: 6px solid #fff;
+    border-right: 6px solid #fff;
+}
+
+#road::before {
+    content: "";
+    position: absolute;
+    width: 6px;
+    height: 100%;
+    left: 50%;
+    background: repeating-linear-gradient(
+        to bottom,
+        white 0px,
+        white 40px,
+        transparent 40px,
+        transparent 80px
+    );
+    opacity: 0.3;
+}
+
+/* 🚗 jugador */
+#car {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    width: 50px;
+    height: 100px;
+    transform: translateX(-50%);
+    background: rgb(39, 51, 216);
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgb(28, 10, 184);
+}
+
+#car::before {
+    content: "";
+    position: absolute;
+    top: 10px;
+    left: 8px;
+    width: 34px;
+    height: 25px;
+    background: #222;
+    border-radius: 5px;
+}
+
+#car::after {
+    content: "";
+    position: absolute;
+    bottom: 10px;
+    left: 8px;
+    width: 34px;
+    height: 10px;
+    background: black;
+    border-radius: 5px;
+}
+
+/* 🚙 enemigos */
+.enemy {
+    position: absolute;
+    width: 50px;
+    height: 100px;
+    background: rgb(28, 138, 6);
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgb(1, 85, 22);
+}
+
+/* vidrio */
+.enemy::before {
+    content: "";
+    position: absolute;
+    top: 10px;
+    left: 8px;
+    width: 34px;
+    height: 25px;
+    background: #111;
+    border-radius: 5px;
+}
+
+/* llantas */
+.enemy::after {
+    content: "";
+    position: absolute;
+    bottom: 10px;
+    left: 8px;
+    width: 34px;
+    height: 10px;
+    background: black;
+    border-radius: 5px;
+}
+
+/* HUD */
+#hud {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    background: rgba(0,0,0,0.5);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+/* controles */
+#controls {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 40px;
+}
+
+button {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    font-size: 25px;
+}
+
+/* GAME OVER */
+#gameOver {
+    display: none;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    color: white;
+    text-align: center;
+    padding-top: 40vh;
+    font-size: 30px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div id="road"></div>
+<div id="hud">🏁 Puntos: 0 | Nivel: 1</div>
+
+<div id="car"></div>
+
+<div id="controls">
+    <button id="left">⬅</button>
+    <button id="right">➡</button>
+</div>
+
+<div id="gameOver">
+💥 GAME OVER
+<br><br>
+<button onclick="restart()">🔁 Replay</button>
+</div>
+
+<script>
+
+let car = document.getElementById("car");
+let hud = document.getElementById("hud");
+let gameOverScreen = document.getElementById("gameOver");
+
+let posX = window.innerWidth / 2;
+let score = 0;
+let level = 1;
+let speed = 6;
+let gameOver = false;
+
+/* mover */
+function left() {
+    posX -= 40;
+    if (posX < window.innerWidth * 0.32)
+        posX = window.innerWidth * 0.32;
+
+    car.style.left = posX + "px";
+}
+
+function right() {
+    posX += 40;
+    if (posX > window.innerWidth * 0.68)
+        posX = window.innerWidth * 0.68;
+
+    car.style.left = posX + "px";
+}
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") left();
+    if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") right();
+});
+
+document.getElementById("left").onclick = left;
+document.getElementById("right").onclick = right;
+
+/* restart */
+function restart() {
+    document.querySelectorAll(".enemy").forEach(e => e.remove());
+
+    score = 0;
+    level = 1;
+    speed = 6;
+    gameOver = false;
+
+    hud.innerText = "🏁 Puntos: 0 | Nivel: 1";
+    gameOverScreen.style.display = "none";
+
+    spawnCar();
+}
+
+/* enemigos */
+function spawnCar() {
+    if (gameOver) return;
+
+    let enemy = document.createElement("div");
+    enemy.classList.add("enemy");
+
+    let lanes = [0.35, 0.5, 0.65];
+    enemy.style.left = window.innerWidth * lanes[Math.floor(Math.random()*3)] + "px";
+    enemy.style.top = "-120px";
+
+    document.body.appendChild(enemy);
+
+    let move = setInterval(() => {
+
+        if (gameOver) {
+            clearInterval(move);
+            enemy.remove();
+            return;
+        }
+
+        enemy.style.top = enemy.offsetTop + speed + "px";
+
+        let c = car.getBoundingClientRect();
+        let e = enemy.getBoundingClientRect();
+
+        if (
+            c.x < e.x + e.width &&
+            c.x + c.width > e.x &&
+            c.y < e.y + e.height &&
+            c.y + c.height > e.y
+        ) {
+            gameOver = true;
+            gameOverScreen.style.display = "block";
+            clearInterval(move);
+            enemy.remove();
+        }
+
+        if (enemy.offsetTop > window.innerHeight) {
+            enemy.remove();
+            clearInterval(move);
+
+            score++;
+
+            if (score % 5 === 0) {
+                level++;
+                speed++;
+            }
+
+            hud.innerText = "🏁 Puntos: " + score + " | Nivel: " + level;
+        }
+
+    }, 20);
+
+    if (!gameOver) {
+        setTimeout(spawnCar, 900);
+    }
+}
+
+spawnCar();
+
+</script>
+
+</body>
+</html>
