@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Esquiva los bloques</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #000; /* 🔥 negro puro */
+    overflow: hidden;
+    color: #fff;
+}
+
+/* aviso rotar */
+#rotateMessage {
+    display: none;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    color: #fff;
+    font-size: 22px;
+    text-align: center;
+    padding-top: 40vh;
+    z-index: 999;
+}
+
+@media screen and (orientation: portrait) {
+    #rotateMessage {
+        display: block;
+    }
+}
+
+#score {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    font-size: 18px;
+    background: rgba(255,255,255,0.05);
+    padding: 10px 15px;
+    border-radius: 10px;
+}
+
+#player {
+    position: absolute;
+    bottom: 90px;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    background: #00e5ff;
+    border-radius: 12px;
+    transform: translateX(-50%);
+    box-shadow: 0 0 20px #00e5ff;
+}
+
+.block {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: #ff1744;
+    border-radius: 8px;
+    box-shadow: 0 0 15px #ff1744;
+}
+
+/* controles */
+#controls {
+    position: absolute;
+    bottom: 15px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 40px;
+}
+
+#controls button {
+    width: 80px;
+    height: 80px;
+    font-size: 30px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+</style>
+
+</head>
+
+<body>
+
+<div id="rotateMessage">
+📱 Gira tu celular para jugar en horizontal
+</div>
+
+<div id="score">Puntos: 0</div>
+<div id="player"></div>
+
+<div id="controls">
+    <button id="leftBtn">⬅</button>
+    <button id="rightBtn">➡</button>
+</div>
+
+<script>
+let player = document.getElementById("player");
+let scoreText = document.getElementById("score");
+let leftBtn = document.getElementById("leftBtn");
+let rightBtn = document.getElementById("rightBtn");
+
+let score = 0;
+let gameOver = false;
+
+let posX = window.innerWidth / 2;
+
+function moveLeft() {
+    posX -= 25;
+    if (posX < 0) posX = 0;
+    player.style.left = posX + "px";
+}
+
+function moveRight() {
+    posX += 25;
+    if (posX > window.innerWidth - 60)
+        posX = window.innerWidth - 60;
+
+    player.style.left = posX + "px";
+}
+
+document.addEventListener("keydown", (e) => {
+    if (gameOver) return;
+
+    if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") moveLeft();
+    if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") moveRight();
+});
+
+leftBtn.addEventListener("click", moveLeft);
+rightBtn.addEventListener("click", moveRight);
+leftBtn.addEventListener("touchstart", moveLeft);
+rightBtn.addEventListener("touchstart", moveRight);
+
+function crearBloque() {
+    if (gameOver) return;
+
+    let block = document.createElement("div");
+    block.classList.add("block");
+    block.style.left = Math.random() * (window.innerWidth - 40) + "px";
+    block.style.top = "0px";
+
+    document.body.appendChild(block);
+
+    let fall = setInterval(() => {
+        if (gameOver) {
+            clearInterval(fall);
+            block.remove();
+            return;
+        }
+
+        block.style.top = block.offsetTop + 6 + "px";
+
+        let p = player.getBoundingClientRect();
+        let b = block.getBoundingClientRect();
+
+        if (
+            p.x < b.x + b.width &&
+            p.x + p.width > b.x &&
+            p.y < b.y + b.height &&
+            p.y + p.height > b.y
+        ) {
+            gameOver = true;
+            alert(" GAME OVER\nPuntos: " + score);
+            location.reload();
+        }
+
+        if (block.offsetTop > window.innerHeight) {
+            block.remove();
+            clearInterval(fall);
+            score++;
+            scoreText.innerText = "Puntos: " + score;
+        }
+
+    }, 20);
+
+    setTimeout(crearBloque, 700);
+}
+
+crearBloque();
+</script>
+
+</body>
+</html>
